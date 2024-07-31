@@ -1,0 +1,21 @@
+[Unit]
+Description=Averox WebRTC SFU
+Wants=redis-server.service
+After=syslog.target network.target freeswitch.service avx-webrtc-recorder.service redis-server.service
+PartOf=averox.target
+
+[Service]
+WorkingDirectory=/usr/local/averox/avx-webrtc-sfu
+ExecStart=/usr/bin/node server.js
+Restart=always
+SyslogIdentifier=avx-webrtc-sfu
+User=averox
+Group=averox
+Environment=NODE_ENV=production
+Environment=NODE_CONFIG_DIR=/etc/averox/avx-webrtc-sfu/:/usr/local/averox/avx-webrtc-sfu/config/
+Environment=ALLOW_CONFIG_MUTATIONS=true
+CPUSchedulingPolicy=fifo
+Nice=19
+
+[Install]
+WantedBy=multi-user.target averox.target

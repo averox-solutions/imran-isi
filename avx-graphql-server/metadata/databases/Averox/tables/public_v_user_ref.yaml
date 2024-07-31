@@ -1,0 +1,47 @@
+table:
+  name: v_user_ref
+  schema: public
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_name: user_ref
+  custom_root_fields: {}
+select_permissions:
+  - role: avx_client
+    permission:
+      columns:
+        - authed
+        - avatar
+        - away
+        - banned
+        - captionLocale
+        - clientType
+        - color
+        - disconnected
+        - expired
+        - extId
+        - guest
+        - guestStatus
+        - hasDrawPermissionOnCurrentPage
+        - isDialIn
+        - isModerator
+        - isOnline
+        - joined
+        - locked
+        - loggedOut
+        - mobile
+        - name
+        - nameSortable
+        - pinned
+        - presenter
+        - raiseHand
+        - reactionEmoji
+        - registeredOn
+        - role
+        - speechLocale
+        - userId
+      filter:
+        meetingId:
+          _eq: X-Hasura-MeetingId
+      query_root_fields: []
+      subscription_root_fields: []

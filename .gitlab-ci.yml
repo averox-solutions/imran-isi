@@ -1,0 +1,213 @@
+# set up stages
+#
+
+variables:
+  GIT_STRATEGY: fetch
+
+stages:
+  - change detection
+  - get external dependencies
+  - build
+  - push packages
+
+# define which docker image to use for builds
+default:
+  image: averox/avx-build:v3.0.x-release--2023-09-26-152524
+
+# This stage uses git to find out since when each package has been unmodified.
+# it then checks an API endpoint on the package server to find out for which of
+# these versions a build exists. If a viable build (from a commit where the
+# package is identical) is found, that package name and .deb-filename are
+# written to a file `packages_to_skip.txt` the root of the repo. This file is
+# passed to the subsequent stages:
+# - The jobs in the build stage check whether "their" package is listed in
+#   `packages_to_skip.txt` and don't build a new one if it is.
+# - The averox-build job includes the package versions listed in that
+#   file as version-pinned dependencies of the `averox` package (instead
+#   of the current commit version)
+# - The push_packages job sends the filenames of the packages that can be reused
+#   to the server, so they are included with the current branch. (Relevant for
+#   commits that start a new branch and don't change all packages)
+change_detection:
+  stage: change detection
+  script: build/change_detection.sh
+  artifacts:
+    paths:
+      - packages_to_skip.txt
+
+# replace placeholder files with actual external repos
+# (for source and version of the package see the placeholder file)
+# this step will be obsolete once dependencies can be tracked as
+# git submodules
+get_external_dependencies:
+  stage: get external dependencies
+  script: build/get_external_dependencies.sh
+  artifacts:
+    paths:
+      - avx-etherpad
+      - avx-webhooks
+      - avx-webrtc-sfu
+      - avx-webrtc-recorder
+      - freeswitch
+      - avx-pads
+      - avx-playback
+      - avx-transcription-controller
+    expire_in: 1h 30min
+
+# template job for build step
+.build_job:
+  stage: build
+  artifacts:
+    paths:
+      - artifacts/*.deb
+    expire_in: 1h 30min
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - cache/.gradle
+
+# jobs for all packages in the "build" stage (templated from above)
+avx-apps-akka-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-apps-akka
+
+avx-config-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-config
+
+avx-etherpad-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-etherpad
+
+avx-freeswitch-core-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-freeswitch-core
+
+avx-freeswitch-sounds-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-freeswitch-sounds
+
+avx-fsesl-akka-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-fsesl-akka
+
+avx-html5-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-html5
+
+avx-graphql-middleware-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-graphql-middleware
+
+avx-graphql-server-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-graphql-server
+
+avx-learning-dashboard-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-learning-dashboard
+
+avx-libreoffice-docker-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-libreoffice-docker
+
+avx-mkclean-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-mkclean
+
+avx-pads-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-pads
+
+avx-playback-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-playback
+
+avx-playback-notes-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-playback-notes
+
+avx-playback-podcast-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-playback-podcast
+
+avx-playback-presentation-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-playback-presentation
+
+avx-playback-screenshare-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-playback-screenshare
+
+avx-record-core-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-record-core
+
+avx-web-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-web
+
+avx-webhooks-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-webhooks
+
+avx-webrtc-sfu-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-webrtc-sfu
+
+avx-webrtc-recorder-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-webrtc-recorder
+
+avx-livekit:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-livekit
+
+avx-transcription-controller-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh avx-transcription-controller
+
+averox-build:
+  extends: .build_job
+  script:
+    - build/setup-inside-docker.sh averox
+
+# upload packages to repo server
+push_packages:
+  stage: push packages
+  script: build/push_packages.sh
+  resource_group: push_packages
+
+  # uncomment the lines below if you want one final
+  # "artifacts" dir with all packages (increases runtime, fills up space on gitlab server)
+  #artifacts:
+  #    paths:
+  #      - artifacts/*
+  #    expire_in: 2 days
+
+

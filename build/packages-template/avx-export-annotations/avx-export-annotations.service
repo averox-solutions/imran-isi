@@ -1,0 +1,17 @@
+[Unit]
+Description=Averox Export Annotations
+Wants=redis.service
+After=syslog.target network.target
+PartOf=averox.target
+
+[Service]
+WorkingDirectory=/usr/local/averox/avx-export-annotations
+ExecStart=/usr/bin/node master.js
+Restart=always
+SyslogIdentifier=avx-export-annotations
+User=averox
+Group=averox
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target averox.target

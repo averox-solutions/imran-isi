@@ -1,0 +1,407 @@
+name: "Automated tests"
+on:
+  push:
+    branches:
+      - "develop"
+      - "v2.[5-9].x-release"
+      - "v[3-9].*.x-release"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "averox-html5/public/locales/*.json"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "averox-html5/public/locales/*.json"
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-package:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          [
+            avx-apps-akka,
+            avx-config,
+            avx-export-annotations,
+            avx-learning-dashboard,
+            avx-playback-record,
+            avx-graphql-server,
+            avx-etherpad,
+            avx-web,
+            avx-fsesl-akka,
+            avx-html5,
+            avx-freeswitch,
+            avx-webrtc,
+            others,
+          ]
+        include:
+          - package: avx-apps-akka
+            cache-files-list: akka-avx-apps avx-common-message
+          - package: avx-config
+            cache-files-list: averox-config
+          - package: avx-export-annotations
+            cache-files-list: avx-export-annotations
+          - package: avx-learning-dashboard
+            cache-files-list: avx-learning-dashboard
+          - package: avx-playback-record
+            build-list: avx-playback avx-playback-notes avx-playback-podcast avx-playback-presentation avx-playback-screenshare avx-playback-video avx-record-core
+          - package: avx-graphql-server
+            build-name: avx-graphql-server
+            build-list: avx-graphql-server avx-graphql-middleware avx-graphql-actions
+          - package: avx-etherpad
+            cache-files-list: avx-etherpad.placeholder.sh
+            cache-urls-list: https://api.github.com/repos/mconf/ep_pad_ttl/commits https://api.github.com/repos/alangecker/avx-etherpad-plugin/commits https://api.github.com/repos/mconf/ep_redis_publisher/commits https://api.github.com/repos/alangecker/avx-etherpad-skin/commits
+          - package: avx-web
+            cache-files-list: averox-web avx-common-message avx-common-web
+          - package: avx-fsesl-akka
+            cache-files-list: akka-avx-fsesl avx-common-message
+          - package: avx-html5
+            build-list: avx-html5-nodejs avx-html5
+            cache-files-list: averox-html5
+          - package: avx-freeswitch
+            build-list: avx-freeswitch-core avx-freeswitch-sounds
+            cache-files-list: freeswitch.placeholder.sh
+            cache-urls-list: http://averox.org/downloads/sounds.tar.gz
+          - package: avx-webrtc
+            build-list: avx-webrtc-sfu avx-webrtc-recorder
+            cache-files-list: avx-webrtc-sfu.placeholder.sh avx-webrtc-recorder.placeholder.sh
+          - package: others
+            build-list: avx-mkclean avx-pads avx-libreoffice-docker avx-transcription-controller averox avx-livekit
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge branches
+        uses: ./.github/actions/merge-branches
+      - name: Set cache-key vars
+        run: |
+          BUILD_DIRS="$(echo '${{ matrix.build-list || matrix.package }}' | sed 's/[^ ]\+/build\/packages-template\/&/g')"
+          echo "Including build dirs: $BUILD_DIRS"
+          echo "CACHE_KEY_FILES=$(echo '${{ matrix.cache-files-list }} '$BUILD_DIRS' .gitlab-ci.yml build/deb-helper.sh' | xargs -n1 git log -1 --format=%h -- | tr '\n' '-' | sed 's/-$//')" >> $GITHUB_ENV
+          echo "CACHE_KEY_URLS=$(echo '${{ matrix.cache-urls-list }}' | xargs -r -n 1 curl -Is | grep -i 'Last-Modified' | md5sum | cut -c1-10)" >> $GITHUB_ENV
+          cat averox-config/averox-release >> $GITHUB_ENV
+          echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
+          echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
+      - name: Handle cache
+        if: matrix.cache-files-list != ''
+        id: cache-action
+        uses: actions/cache@v4
+        with:
+          path: artifacts.tar
+          key: ${{ runner.os }}-${{ matrix.package }}-${{ env.BIGBLUEBUTTON_RELEASE }}-commits-${{ env.CACHE_KEY_FILES }}-urls-${{ env.CACHE_KEY_URLS }}
+      - if: ${{ steps.cache-action.outputs.cache-hit != 'true' }}
+        name: Generate artifacts
+        shell: bash
+        run: |
+          ./build/get_external_dependencies.sh
+          echo "${{ matrix.build-list || matrix.package }}" | xargs -n 1 ./build/setup.sh
+          tar cvf artifacts.tar artifacts/
+      - name: Archive packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts_${{ matrix.package }}.tar
+          path: artifacts.tar
+  install-and-run-tests:
+    needs: build-package
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    env:
+      shard: ${{ matrix.shard }}/8
+      MATRIX_SHARD_UNDERSCORED: ${{ matrix.shard }}_8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge branches
+        uses: ./.github/actions/merge-branches
+      - run: ./build/get_external_dependencies.sh
+      - name: Download artifacts_avx-apps-akka
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-apps-akka.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-config
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-config.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-export-annotations
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-export-annotations.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-learning-dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-learning-dashboard.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-playback-record
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-playback-record.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-graphql-server
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-graphql-server.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-etherpad
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-etherpad.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-freeswitch
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-freeswitch.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-webrtc
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-webrtc.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-web
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-web.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-fsesl-akka
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-fsesl-akka.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts_avx-html5
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_avx-html5.tar
+      - run: tar xf artifacts.tar
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts_others.tar
+      - run: tar xf artifacts.tar
+      - name: Extracting files .tar
+        run: |
+          set -e
+          pwd
+          echo "----ls artifacts/----"
+          ls artifacts/
+          echo "Done"
+      - name: Generate CA
+        run: |
+          sudo -i <<EOF
+          set -e
+          mkdir /root/avx-ci-ssl/
+          cd /root/avx-ci-ssl/
+          openssl rand -base64 48 > /root/avx-ci-ssl/avx-dev-ca.pass ;
+          chmod 600 /root/avx-ci-ssl/avx-dev-ca.pass ;
+          openssl genrsa -des3 -out avx-dev-ca.key -passout file:/root/avx-ci-ssl/avx-dev-ca.pass 2048 ;
+          openssl req -x509 -new -nodes -key avx-dev-ca.key -sha256 -days 1460 -passin file:/root/avx-ci-ssl/avx-dev-ca.pass -out avx-dev-ca.crt -subj "/C=CA/ST=BBB/L=BBB/O=BBB/OU=BBB/CN=BBB-DEV" ;
+          EOF
+      - name: Trust CA
+        run: |
+          sudo -i <<EOF
+          set -e
+          sudo mkdir /usr/local/share/ca-certificates/avx-dev/
+          sudo cp /root/avx-ci-ssl/avx-dev-ca.crt /usr/local/share/ca-certificates/avx-dev/
+          sudo chmod 644 /usr/local/share/ca-certificates/avx-dev/avx-dev-ca.crt
+          sudo update-ca-certificates
+          EOF
+      - name: Generate certificate
+        run: |
+          sudo sh -c '
+          cd /root/avx-ci-ssl/
+          echo "$(hostname -I | cut -d" " -f1) avx-ci.test" >> /etc/hosts
+          openssl genrsa -out avx-ci.test.key 2048
+          rm -f avx-ci.test.csr avx-ci.test.crt avx-ci.test.key
+          cat > avx-ci.test.ext << EOF
+          authorityKeyIdentifier=keyid,issuer
+          basicConstraints=CA:FALSE
+          keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+          subjectAltName = @alt_names
+          [alt_names]
+          DNS.1 = avx-ci.test
+          EOF
+          openssl req -nodes -newkey rsa:2048 -keyout avx-ci.test.key -out avx-ci.test.csr -subj "/C=CA/ST=BBB/L=BBB/O=BBB/OU=BBB/CN=avx-ci.test" -addext "subjectAltName = DNS:avx-ci.test"
+          openssl x509 -req -in avx-ci.test.csr -CA avx-dev-ca.crt -CAkey avx-dev-ca.key -CAcreateserial -out avx-ci.test.crt -days 825 -sha256 -passin file:/root/avx-ci-ssl/avx-dev-ca.pass -extfile avx-ci.test.ext
+          cd
+
+          mkdir -p /local/certs/
+          cp /root/avx-ci-ssl/avx-dev-ca.crt /local/certs/
+          cat /root/avx-ci-ssl/avx-ci.test.crt > /local/certs/fullchain.pem
+          cat /root/avx-ci-ssl/avx-dev-ca.crt >> /local/certs/fullchain.pem
+          cat /root/avx-ci-ssl/avx-ci.test.key > /local/certs/privkey.pem
+          '
+      - name: Setup local repository
+        shell: bash
+        run: |
+          sudo -i <<EOF
+          set -e
+          apt install -yq dpkg-dev
+          cd /root && wget -nv http://ci.avx.imdt.dev/cache-3rd-part-packages.tar
+          cp -r /home/runner/work/averox/averox/artifacts/ /artifacts/
+          cd /artifacts && tar xf /root/cache-3rd-part-packages.tar
+          cd /artifacts && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+          echo "deb [trusted=yes] file:/artifacts/ ./" >> /etc/apt/sources.list
+          EOF
+      - name: Prepare for install
+        run: |
+          sudo sh -c '
+          apt --purge -y remove apache2-bin
+          '
+      - name: Install BBB
+        uses: nick-fields/retry@v3
+        env:
+          NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/avx-dev/avx-dev-ca.crt
+          ACTIONS_RUNNER_DEBUG: true
+        with:
+          timeout_minutes: 25
+          max_attempts: 2
+          command: |
+            sudo -i <<EOF
+            set -e
+            cd /root/ && wget -nv https://raw.githubusercontent.com/averox/avx-install/v3.0.x-release/avx-install.sh -O avx-install.sh
+            cat avx-install.sh | sed "s|> /etc/apt/sources.list.d/averox.list||g" | bash -s -- -v jammy-30-dev -s avx-ci.test -j -d /certs/
+            avx-conf --salt avxci
+            sed -i "s/\"minify\": true,/\"minify\": false,/" /usr/share/etherpad-lite/settings.json
+            avx-conf --restart
+            EOF
+      - name: List systemctl services
+        timeout-minutes: 1
+        run: |
+          sudo -i <<EOF
+          systemctl --type=service --state=running,exited,failed --all --no-pager --no-legend
+          EOF
+      - name: Install test dependencies
+        working-directory: ./averox-tests/playwright
+        run: |
+          sh -c '
+          npm ci
+          npx playwright install-deps
+          npx playwright install
+          '
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 25
+          max_attempts: 2
+          command: |
+            cd ./averox-tests/playwright
+            npm run test-chromium-ci -- --shard ${{ env.shard }}
+        env:
+          NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/avx-dev/avx-dev-ca.crt
+          ACTIONS_RUNNER_DEBUG: true
+          BBB_URL: https://avx-ci.test/averox/api
+          BBB_SECRET: avxci
+      - name: Run Firefox tests
+        working-directory: ./averox-tests/playwright
+        if: |
+          contains(github.event.pull_request.labels.*.name, 'test Firefox') ||
+          contains(github.event.pull_request.labels.*.name, 'Test Firefox')
+        env:
+          NODE_EXTRA_CA_CERTS: /usr/local/share/ca-certificates/avx-dev/avx-dev-ca.crt
+          ACTIONS_RUNNER_DEBUG: true
+          BBB_URL: https://avx-ci.test/averox/api
+          BBB_SECRET: avxci
+        # patch playwright's firefox so that it uses the system's root certificate authority
+        run: |
+          sh -c '
+          find $HOME/.cache/ms-playwright -name libnssckbi.so -exec rm {} \; -exec ln -s /usr/lib/x86_64-linux-gnu/pkcs11/p11-kit-trust.so {} \;
+          npm run test-firefox-ci -- --shard ${{ env.shard }}
+          '
+      - if: always()
+        name: Upload blob report to GitHub Actions Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: averox-tests/playwright/blob-report
+      - if: failure()
+        name: Prepare artifacts (configs and logs)
+        run: |
+          sudo -i <<EOF
+          mkdir configs
+          cp /etc/haproxy/haproxy.cfg configs/haproxy.cfg
+          touch /etc/averox/turn-stun-servers.xml
+          cp /etc/averox/turn-stun-servers.xml configs/turn-stun-servers.xml
+          cp /opt/freeswitch/etc/freeswitch/vars.xml configs/freeswitch_vars.xml
+          cp /opt/freeswitch/etc/freeswitch/sip_profiles/external.xml configs/freeswitch_sip_profiles_external.xml
+          cp /etc/averox/avx-apps-akka.conf configs/avx-apps-akka.conf
+          cp /etc/averox/avx-fsesl-akka.conf configs/avx-fsesl-akka.conf
+          cp /etc/averox/avx-html5.yml configs/avx-html5.yml
+          cp /etc/averox/avx-web.properties configs/avx-web.properties
+          cp /etc/averox/averox-release configs/averox-release
+          cp /etc/averox/turn-stun-servers.xml configs/turn-stun-servers.xml
+          cp /usr/local/averox/avx-webrtc-sfu/config/default.yml configs/avx-webrtc-sfu-default.yml
+          cp /etc/avx-webrtc-recorder/avx-webrtc-recorder.yml configs/avx-webrtc-recorder-default.yml
+          cp /usr/share/averox/nginx/sip.nginx configs/nginx_sip.nginx
+          cp /etc/hosts /configs/hosts
+          mv configs /home/runner/work/averox/averox/configs
+          chmod a+r -R /home/runner/work/averox/averox/configs
+          avx-conf --zip
+          ls -t /root/*.tar.gz | head -1 | xargs -I '{}' cp '{}' /home/runner/work/averox/averox/avx-logs.tar.gz
+          EOF
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: avx-configs-${{ env.MATRIX_SHARD_UNDERSCORED }}
+          path: configs
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: avx-logs-${{ env.MATRIX_SHARD_UNDERSCORED }}
+          path: ./avx-logs.tar.gz
+  upload-report:
+    if: always() && !contains(github.event.head_commit.message, 'Merge pull request')
+    needs: install-and-run-tests
+    runs-on: ubuntu-latest
+    env:
+      hasReportData: ${{ needs.install-and-run-tests.result == 'success' || needs.install-and-run-tests.result == 'failure' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        if: ${{ env.hasReportData }}
+        working-directory: ./averox-tests/playwright
+        run: npm ci
+      - name: Merge artifacts
+        if: ${{ env.hasReportData }}
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: all-blob-reports
+          pattern: blob-report-*
+          delete-merged: true
+      - name: Download all blob reports from GitHub Actions Artifacts
+        if: ${{ env.hasReportData }}
+        uses: actions/download-artifact@v4
+        with:
+          name: all-blob-reports
+          path: averox-tests/playwright/all-blob-reports
+      - name: Merge into HTML Report
+        if: ${{ env.hasReportData }}
+        working-directory: ./averox-tests/playwright
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Upload HTML tests report
+        if: ${{ env.hasReportData }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-report
+          overwrite: true
+          path: |
+            averox-tests/playwright/playwright-report
+            averox-tests/playwright/test-results
+      - name: Remove unnecessary artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            artifacts_*
+            all-blob-reports
+          failOnError: false

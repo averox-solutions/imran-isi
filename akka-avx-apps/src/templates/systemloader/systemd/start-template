@@ -1,0 +1,26 @@
+[Unit]
+Description=Averox Apps (Akka)
+Requires=network.target
+Wants=redis-server.service avx-fsesl-akka.service postgresql.service avx-graphql-server.service
+After=redis-server.service avx-fsesl-akka.service postgresql.service avx-graphql-server.service
+PartOf=averox.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/share/avx-apps-akka
+EnvironmentFile=/etc/default/avx-apps-akka
+ExecStart=/usr/share/avx-apps-akka/bin/avx-apps-akka
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=60
+SuccessExitStatus=143
+TimeoutStopSec=5
+User=averox
+ExecStartPre=/bin/mkdir -p /run/avx-apps-akka
+ExecStartPre=/bin/chown averox:averox /run/avx-apps-akka
+ExecStartPre=/bin/chmod 755 /run/avx-apps-akka
+PermissionsStartOnly=true
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target averox.target

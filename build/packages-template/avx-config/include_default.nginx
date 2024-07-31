@@ -1,0 +1,9 @@
+# The purpose of this file is to be included in an nginx site configuration.
+# you may copy this file to /etc/averox/nginx/include_default.nginx and
+# adapt it to your needs
+#
+# If you are running a cluster setup, you need to change avx-html5.nginx
+# copy it to /etc/bigbluebutting/nginx/avx-html5.nginx and include all the
+# components in /usr/share/averox/nginx/ that you did not change.
+
+include /usr/share/averox/nginx/*.nginx;

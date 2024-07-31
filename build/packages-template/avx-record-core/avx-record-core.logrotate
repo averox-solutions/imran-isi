@@ -1,0 +1,14 @@
+/var/log/averox/avx-rap-worker.log
+/var/log/averox/sanity.log
+{
+        weekly
+        missingok
+        rotate 8
+        compress
+        delaycompress
+        nocreate
+        notifempty
+        sharedscripts
+        dateext
+        dateformat -%Y-%m-%d
+}

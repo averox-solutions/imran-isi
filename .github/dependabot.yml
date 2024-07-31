@@ -1,0 +1,106 @@
+version: 2
+updates:
+
+  # maintaining legacy branch
+  # no configuration for now
+
+  # current branch
+  ## excluding averox-tests/playwright, averox-tests/puppeteer, docs
+  - package-ecosystem: npm
+    directory: "/avx-export-annotations"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+  - package-ecosystem: npm
+    directory: "/averox-html5"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+  - package-ecosystem: npm
+    directory: "/avx-learning-dashboard"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+  - package-ecosystem: gradle
+    directory: "/averox-web"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+  - package-ecosystem: bundler
+    directory: "/record-and-playback/core"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+    vendor: true
+  - package-ecosystem: maven
+    directory: "/avx-fsesl-client"
+    target-branch: "v2.7.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 0 # zero means only security pull requests and no (optional) version updates
+  
+
+  # upcoming release branch
+  ## excluding averox-tests/playwright, averox-tests/puppeteer, docs, avx-graphql-client-test
+  - package-ecosystem: npm
+    directory: "/avx-graphql-actions"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: npm
+    directory: "/avx-export-annotations"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: npm
+    directory: "/averox-html5"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: npm
+    directory: "/avx-learning-dashboard"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+    - package-ecosystem: gradle
+    directory: "/averox-web"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: bundler
+    directory: "/record-and-playback/core"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: maven
+    directory: "/avx-fsesl-client"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: gomod
+    directory: "/avx-graphql-middleware"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+  - package-ecosystem: gomod
+    directory: "/avx-graphql-server"
+    target-branch: "v3.0.x-release"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20 # both security and versions updates
+
+  # upstream (default) branch
+  # no configuration for now

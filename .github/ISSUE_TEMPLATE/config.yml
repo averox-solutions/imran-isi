@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Averox Setup
+    url: https://groups.google.com/forum/#!forum/averox-setup
+    about: Get help with installation, setup and configuration of a Averox server.
+  - name: Averox Users
+    url: https://groups.google.com/forum/#!forum/averox-users
+    about: Get help and give feedback about using Averox.
+  - name: Averox Developers
+    url: https://groups.google.com/forum/#!forum/averox-dev
+    about: Ask questions and share experiences with other Averox developers.
+  - name: Greenlight Frontend
+    url: https://github.com/averox/averoxserver/issues/
+    about: Issue tracker for the Greenlight frontend
+  - name: Commercial Support
+    url: https://averox.org/commercial-support
+    about: List of companies offering commercial Averox support

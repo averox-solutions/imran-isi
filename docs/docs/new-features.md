@@ -1,0 +1,204 @@
+
+![Averox 3.0 runs on Ubuntu 22.04](/img/30_BBB_header.png)
+
+## Overview
+
+### This document is still a draft, Averox 3.0 is under development
+
+Averox 3.0 offers users improved usability, increased engagement, and more performance.
+
+- **Usability** - making common functions (such as raise hand) easier
+- **Engagement** - giving the instructor more ways to engage students
+- **Performance** - increasing overall performance and scalability
+
+Here's a breakdown of what's new in 3.0.
+
+### Usability
+
+#### Upgraded whiteboard
+
+We have done significant work to adopt the newly released version 2 of tl;draw. It comes with even more tools and capabilities and has allowed us to embark on more ambitious whiteboard projects, for example a prototype of an Infinite Canvas.
+
+#### New layouts for specific integration scenarios
+
+Several new layouts have been added ("Cameras Only", "Presentation Only", and "Participants and Chat Only") to address various use cases of hybrid education - for example splitting views of the Averox session to be visible on different physical screens.
+
+#### Improved Away Mode
+
+We have made changes so that when you set yourself as being Away, your microphone is now automatically muted, your webcam is also muted (blank).
+
+![set yourself away](/img/30/30-set-away.png)
+
+ When you return and unmute yourself this counts as disabling Away mode. The control for toggling away mode is now positioned in the Reactions bar.
+
+![set yourself active](/img/30/30-set-active.png)
+
+Away mode also is recorded in the public chat area.
+
+![away public chat](/img/30/30-away-public-chat.png)
+
+#### Leave Meeting Button
+
+A contribution from community member Jan Kessler, the direct Leave Meeting button was first introduced in Averox 2.7.5. Starting with Averox 3.0 we are making it enabled by default.
+
+![leave the meeting red button](/img/30/30-leave-meeting.png)
+
+Viewers can leave the meeting by using this new red button, previously hidden near the Setting menu. For moderators, the button includes the option to end the meeting as well. 
+
+#### Better looking polling results
+
+We have enhanced the view of the polling results that appear over the whiteboard. It is now much more intuitive to read.
+
+![better polling results](/img/30/30-poll-annotation.png)
+
+### Engagement
+
+<!-- ####  -->
+
+<!-- ### Analytics -->
+
+
+### Behind the scene
+
+#### Introduction of plugins
+
+We have made significant changes to the architecture of Averox and have introduced support to plugins -- optional custom modules included in the client which allow expanding the capabilities of Averox. A data channel is provided to allow for data exchange between clients. See the [HTML5 Plugin SDK](https://github.com/averox/averox-html-plugin-sdk) for examples and more information.
+
+At the moment of writing these documentation, the official list of plugins includes: 
+- [Select Random User](https://github.com/averox/plugin-pick-random-user)
+- [Share a link](https://github.com/averox/plugin-generic-link-share)
+- [H5P plugin for Averox](https://github.com/averox/plugin-h5p)
+- [Session share](https://github.com/averox/plugin-session-share)
+- [Decrease the volume of external video when someone speaks](https://github.com/averox/plugin-decrease-volume-on-speak)
+- [Typed captions](https://github.com/averox/plugin-typed-captions)
+- [Source code highlight](https://github.com/averox/plugin-code-highlight)
+
+#### Replaced Akka framework with Pekko
+
+Following the license change of Akka back in September 2022 we considered several options and decided to replace our use of Akka with [Apache Pekko](https://github.com/apache/incubator-pekko) More on the transition: https://github.com/averox/averox/pull/18694
+
+#### Override client settings through API /create call
+
+Administrators will appreciate that we now allow passing of custom client settings through the meeting create API call. You no longer need separate servers to accommodate for sessions requiring vastly different settings.yml configuration
+
+#### Major strides in replacing Meteor
+
+For years we have discussed internally the topic of replacing Meteor.js with other technologies in order to improve scalability, performance, etc. In the last year we have introduced several different new components to replace Meteor. The work is underway, it will span into Averox 3.0, 3.1, possibly 3.2 too.
+These new components are: `avx-graphql-server`, `avx-graphql-middleware`, `avx-graphql-actions`, database Postgres, GraphQL server Hasura.
+
+Note: The services `avx-html5-backend` and `avx-html5-frontend` have been removed and `avx-html5` modified heavily as a result of the change in architecture.
+
+#### The whiteboard was improved
+
+We upgraded tl;draw from version 1 to version 2.0.0-alpha.19 (the last version on Apache 2.0 licence). That was quite a significant task but brought better performance, better looks, improved stylus support and many more. Note that we have forked tldraw's project as of their version 2.0.0-alpha.19 to ensure we remain on the Apache 2.0 license. We will be maintaining the fork so that Averox has a stable whiteboard in the future.
+
+#### Support for Collabora Online as Document Converter
+
+Collabora Productivity contributed the support for an alternative conversion script where Collabora Online (deployed locally [as a docker container] or running remotely) can be used for document conversion.
+For more information check the [pull request](https://github.com/averox/averox/pull/18783)
+
+### Experimental
+
+<!-- #### LiveKit support -->
+
+<!-- Infinite whiteboard -->
+
+### Upgraded components
+
+Under the hood, Averox 3.0 installs on Ubuntu 22.04 64-bit, and the following key components have been upgraded
+...
+
+For full details on what is new in Averox 3.0, see the release notes.
+
+
+Recent releases:
+
+- [3.0.0-alpha.7](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.7)
+- [3.0.0-alpha.6](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.6)
+- [3.0.0-alpha.5](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.5)
+- [3.0.0-alpha.4](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.4)
+- [3.0.0-alpha.3](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.3)
+- [3.0.0-alpha.2](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.2)
+- [3.0.0-alpha.1](https://github.com/averox/averox/releases/tag/v3.0.0-alpha.1)
+
+### Other notable changes
+
+#### Removal of Kurento
+
+We have removed all use of Kurento Media Server. For the live media transmission we still rely on mediasoup. For the recording portion we make use of our own component `avx-webrtc-recorder`. Averox 3.0 is the first release where we do not even install Kurento.
+
+#### Select Random User feature removed and is now a plugin
+
+The functionality Select Random User which used to be part of the Averox core was removed. A plugin with the same functionality was developed and [made public](https://github.com/averox/plugins/tree/main/pick-random-user-plugin).
+
+#### Upgrade of config editing tool yq
+
+We have upgraded `yq` from version 3.4.1 (which was no longer maintained) to 4.16.2. This is a major jump and the syntax used is quite different as well. We went through all internal uses of `yq` - packaging, avx-install.sh, avx-conf and others and updated the syntax. However, if you have custom scripts, you may have to rework the syntax too. Here is a [guide](https://mikefarah.gitbook.io/yq/upgrading-from-v3).
+
+#### Improved support for various SHA algorithms for checksum calculation
+
+In Averox 2.6.17/2.7.5/3.0.0-alpha.5 we added a new configuration property for avx-apps-akka package under `services` called `checkSumAlgorithmForBreakouts`. By default the value is `"sha256"`. It controls the algorithm for checksum calculation for the breakout rooms join link. In case you overwrite avx-web's `supportedChecksumAlgorithms` property removing sha256 you will need to set a supported algorithm here too. For example if you want to only use `sha512`, set `supportedChecksumAlgorithms=sha512` in `/etc/averox/avx-web.properties` and also set `checkSumAlgorithmForBreakouts="sha512"` in `/etc/averox/avx-apps-akka.conf` and then restart Averox.
+
+#### Deprecating join parameter `defaultLayout`, replacing with `userdata-avx_default_layout`.
+
+In Averox 3.0.0-alpha.5 we replaced the JOIN parameter `defaultLayout` with the JOIN parameter `userdata-avx_default_layout`. If none provided the `meetingLayout` (passed on CREATE) will be used. If none passed, and if none passed there, the `defaultMeetingLayout` from avx-web will be used.
+
+#### Added new setting and userdata to allow skipping echo test if session has valid input/output devices stored
+
+- Client settings.yml: `skipEchoTestIfPreviousDevice`. Defaults to `false`
+- Can be overrided on join Custom Parameter with: `userdata-avx_skip_echotest_if_previous_device=`
+
+#### Recording event TranscriptUpdatedRecordEvent blocked
+
+In Averox 2.7.5/3.0.0-alpha.5 we stopped propagating the events.xml event TranscriptUpdatedRecordEvent due to some issues with providing too much and too repetitive data.
+
+#### Added new setting and userdata to allow skipping video preview if session has valid input devices stored
+
+- Client settings.yml: `skipVideoPreviewIfPreviousDevice`. Defaults to `false`
+- Can be overrided on join Custom Parameter with: `userdata-avx_skip_video_preview_if_previous_device=`
+
+### Replaced all user facing instances of "meeting" with the word "session"
+
+The word "session" is more generic and encompasses both educational and work contexts. Up until Averox 3.0 we were using the two keywords interchangeably. Moving forward we are preferring to use "session".
+
+### Changes to events.xml
+
+Retired events
+- `DeskShareNotifyViewersRTMPRecordEvent`
+- `DeskshareStartRtmpRecordEvent`
+- `DeskshareStopRtmpRecordEvent`
+- `TranscriptUpdatedRecordEvent`
+
+Modified/added events
+- `ParticipantJoinEvent` - will contain element `userdata` see https://github.com/averox/averox/pull/20566#pullrequestreview-2142238810
+
+#### avx-web properties changes
+
+- `allowOverrideClientSettingsOnCreateCall=false` added
+- `sessionsCleanupDelayInMinutes=60` added
+- `graphqlWebsocketUrl=${averox.web.serverURL}/graphql` added
+- `defaultAllowPromoteGuestToModerator=false` added
+
+#### Removed support for POST requests on `join` endpoint and Content-Type headers are now required
+
+In Averox 2.6.18/2.7.8 POST requests are no longer allowed for the `join` endpoint. To ensure they are validated properly, a `Content-Type` header must also be provided for POST requests that contain data in the request body. Endpoints now support a limited set of content types that includes `text/xml`, `application/xml`, `application/x-www-form-url-encoded`, and `multipart/form-data`. By default each endpoint only supports `application/x-www-form-urlencoded` and `multipart/form-data`, but individual endpoints can override this and define their own set of supported content types. The `create` endpoint supports all of the four previously listed content types while `insertDocument` supports only `text/xml` and `application/xml`. Any requests with a content type that differs from the set supported by the target endpoint will be rejected with a new `unsupportedContentType` error.
+
+### Removed userStatus
+
+The `userStatus` feature was replaced by `userReaction`. They were vastly overlapping, causing some confusion when using and maintaining.
+
+### Development
+
+For information on developing in Averox, see [setting up a development environment for 3.0](/development/guide).
+
+The build scripts for packaging 3.0 (using fpm) are located in the GitHub repository [here](https://github.com/averox/averox/tree/v3.0.x-release/build).
+
+### Contribution
+
+We welcome contributors to Averox 3.0!  The best ways to contribute at the current time are:
+
+<!-- - Help localize Averox 3.0 on [Transifex project for BBB 3.0](https://www.transifex.com/averox/averox-v30-html5-client/dashboard/) -->
+
+- Try out [installing Averox 3.0](/administration/install) and see if you spot any issues.
+- Help test a [3.0 pull request](https://github.com/averox/averox/pulls?q=is%3Aopen+is%3Apr+milestone%3A%22Release+3.0%22) in your development environment.
+  <!-- TODO create a GitHub label for contributions-welcome and link here -->

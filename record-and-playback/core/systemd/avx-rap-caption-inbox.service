@@ -1,0 +1,15 @@
+[Unit]
+Description=Averox recording caption upload handler
+PartOf=averox.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/averox/core/scripts/rap-caption-inbox.rb
+WorkingDirectory=/usr/local/averox/core
+User=averox
+Slice=avx_record_core.slice
+Restart=on-failure
+Nice=19
+
+[Install]
+WantedBy=multi-user.target averox.target

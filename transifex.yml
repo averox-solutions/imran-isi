@@ -1,0 +1,7 @@
+git:
+  filters:
+    - filter_type: file
+      source_file: averox-html5/public/locales/en.json
+      file_format: KEYVALUEJSON
+      source_language: en
+      translation_files_expression: averox-html5/public/locales/<lang>.json

@@ -1,0 +1,17 @@
+[Unit]
+Description=Averox Pads
+Wants=redis-server.service etherpad.service
+After=syslog.target network.target redis-server.service etherpad.service
+PartOf=averox.target
+
+[Service]
+WorkingDirectory=/usr/local/averox/avx-pads
+ExecStart=/usr/bin/node index.js
+Restart=always
+SyslogIdentifier=avx-pads
+User=averox
+Group=averox
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target averox.target

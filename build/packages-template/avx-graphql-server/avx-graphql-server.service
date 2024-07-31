@@ -1,0 +1,25 @@
+[Unit]
+Description=Averox GraphQL Server
+Requires=network.target
+Wants=postgresql.service
+After=postgresql.service
+PartOf=averox.target
+
+[Service]
+Type=simple
+User=averox
+Group=averox
+WorkingDirectory=/usr/local/bin
+EnvironmentFile=/etc/default/avx-graphql-server
+ExecStart=/usr/local/bin/hasura-graphql-engine serve
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=60
+SuccessExitStatus=143
+TimeoutStopSec=5
+PermissionsStartOnly=true
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target averox.target
+

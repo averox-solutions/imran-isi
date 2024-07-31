@@ -1,0 +1,19 @@
+[Unit]
+Description=Averox GraphQL Actions Adapter Server
+Wants=redis-server.service avx-graphql-server.service
+After=syslog.target network.target redis-server.service avx-graphql-server.service
+PartOf=averox.target
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/usr/local/averox/avx-graphql-actions
+ExecStart=/usr/bin/node avx-graphql-actions.js
+Restart=always
+SyslogIdentifier=avx-graphql-actions
+User=averox
+Group=averox
+Environment=NODE_ENV=production
+RestartSec=1s
+
+[Install]
+WantedBy=multi-user.target averox.target

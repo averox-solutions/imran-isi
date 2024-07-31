@@ -1,0 +1,16 @@
+[Unit]
+Description=Averox recording processing starter
+Wants=redis-server.service
+After=redis-server.service
+PartOf=averox.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/averox/core/scripts/rap-starter.rb
+WorkingDirectory=/usr/local/averox/core/scripts
+User=averox
+Slice=avx_record_core.slice
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target averox.target

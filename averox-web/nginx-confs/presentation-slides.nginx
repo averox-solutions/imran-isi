@@ -1,0 +1,54 @@
+#
+# Averox open source conferencing system - http://www.averox.org/
+#
+# Copyright (c) 2012 Averox Inc. and by respective authors (see below).
+#
+# This program is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free Software
+# Foundation; either version 3.0 of the License, or (at your option) any later
+# version.
+#
+# Averox is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with Averox; if not, see <http://www.gnu.org/licenses/>.
+#
+
+# Have nginx serve the presentation slides instead of tomcat as large files
+# causes tomcat to OOM. (ralam sept 20, 2018)
+
+        location ~^\/averox\/presentation\/(?<meeting_id_1>[A-Za-z0-9\-]+)\/(?<meeting_id_2>[A-Za-z0-9\-]+)\/(?<pres_id>[A-Za-z0-9\-]+)\/svg\/(?<page_num>\d+)$ {
+		default_type image/svg+xml;
+                alias    /var/averox/$meeting_id_2/$meeting_id_2/$pres_id/svgs/slide$page_num.svg;
+                if ($avx_loadbalancer_node) {
+                    add_header 'Access-Control-Allow-Origin' $avx_loadbalancer_node always;
+                }
+        }
+
+        location ~^\/averox\/presentation\/(?<meeting_id_1>[A-Za-z0-9\-]+)\/(?<meeting_id_2>[A-Za-z0-9\-]+)\/(?<pres_id>[A-Za-z0-9\-]+)\/pdf\/(?<job_id>[A-Za-z0-9]+)\/annotated_slides.pdf$ {
+		        default_type application/pdf;
+                alias    /var/averox/$meeting_id_2/$meeting_id_2/$pres_id/pdfs/$job_id/annotated_slides.pdf;
+                if ($avx_loadbalancer_node) {
+                    add_header 'Access-Control-Allow-Origin' $avx_loadbalancer_node always;
+                }
+        }
+
+        location ~^\/averox\/presentation\/(?<meeting_id_1>[A-Za-z0-9\-]+)\/(?<meeting_id_2>[A-Za-z0-9\-]+)\/(?<pres_id>[A-Za-z0-9\-]+)\/thumbnail\/(?<page_num>\d+)$ {
+		default_type image/png;
+                alias    /var/averox/$meeting_id_2/$meeting_id_2/$pres_id/thumbnails/thumb-$page_num.png;
+                if ($avx_loadbalancer_node) {
+                    add_header 'Access-Control-Allow-Origin' $avx_loadbalancer_node always;
+                }
+        }
+
+        location ~^\/averox\/presentation\/(?<meeting_id_1>[A-Za-z0-9\-]+)\/(?<meeting_id_2>[A-Za-z0-9\-]+)\/(?<pres_id>[A-Za-z0-9\-]+)\/textfiles\/(?<page_num>\d+)$ {
+		default_type text/plain;
+                alias    /var/averox/$meeting_id_2/$meeting_id_2/$pres_id/textfiles/slide-$page_num.txt;
+                if ($avx_loadbalancer_node) {
+                    add_header 'Access-Control-Allow-Origin' $avx_loadbalancer_node always;
+                }
+        }
+
+

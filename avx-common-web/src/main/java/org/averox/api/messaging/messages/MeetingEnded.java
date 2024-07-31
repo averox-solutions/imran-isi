@@ -1,0 +1,9 @@
+package org.averox.api.messaging.messages;
+
+public class MeetingEnded implements IMessage {
+  public final String meetingId;
+  
+  public MeetingEnded(String meetingId) {
+  	this.meetingId = meetingId;
+  }
+}

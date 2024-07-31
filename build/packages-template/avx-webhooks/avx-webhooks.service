@@ -1,0 +1,17 @@
+[Unit]
+Description=Averox Webhooks
+Wants=redis-server.service
+After=syslog.target network.target redis-server.service
+PartOf=averox.target
+
+[Service]
+WorkingDirectory=/usr/local/averox/avx-webhooks
+ExecStart=/usr/bin/node app.js
+Restart=always
+SyslogIdentifier=avx-webhooks
+User=averox
+Group=averox
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target averox.target

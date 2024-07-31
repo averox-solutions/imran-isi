@@ -1,0 +1,7 @@
+[Unit]
+Description=Averox System
+Requires=
+After=syslog.target network.target
+
+[Install]
+WantedBy=multi-user.target

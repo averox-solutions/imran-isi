@@ -1,0 +1,68 @@
+package org.averox.core.apps.presentationpod
+
+import org.averox.common2.msgs._
+import org.averox.core.bus.MessageBus
+import org.averox.core.db.PresPresentationDAO
+import org.averox.core.domain.MeetingState2x
+import org.averox.core.models.PresentationInPod
+import org.averox.core.running.LiveMeeting
+
+trait PresentationConversionCompletedSysPubMsgHdlr {
+  this: PresentationPodHdlrs =>
+
+  def handle(
+      msg: PresentationConversionCompletedSysPubMsg,
+      state: MeetingState2x,
+      liveMeeting: LiveMeeting,
+      bus: MessageBus
+  ): MeetingState2x = {
+
+    val meetingId = liveMeeting.props.meetingProp.intId
+    val temporaryPresentationId = msg.body.presentation.temporaryPresentationId
+
+    val newState = for {
+      pod <- PresentationPodsApp.getPresentationPod(state, msg.body.podId)
+      pres <- pod.getPresentation(msg.body.presentation.id)
+    } yield {
+      val presVO = PresentationPodsApp.translatePresentationToPresentationVO(pres, temporaryPresentationId,
+        msg.body.presentation.defaultPresentation, msg.body.presentation.filenameConverted)
+      PresentationSender.broadcastPresentationConversionCompletedEvtMsg(
+        bus,
+        meetingId,
+        pod.id,
+        msg.header.userId,
+        msg.body.messageKey,
+        msg.body.code,
+        presVO,
+      )
+
+      val originalDownloadableExtension = pres.name.split("\\.").last
+      PresentationSender.broadcastSetPresentationDownloadableEvtMsg(
+        bus,
+        meetingId,
+        pod.id,
+        msg.header.userId,
+        pres.id,
+        pres.downloadable,
+        pres.name,
+        originalDownloadableExtension
+      )
+
+      val presWithConvertedName = PresentationInPod(pres.id, pres.name, default = msg.body.presentation.defaultPresentation,
+        pres.current, pres.pages, pres.downloadable, pres.downloadFileExtension, pres.removable, msg.body.presentation.filenameConverted,
+        uploadCompleted = true, numPages = pres.numPages, errorDetails = Map.empty)
+      var pods = state.presentationPodManager.addPod(pod)
+      pods = pods.addPresentationToPod(pod.id, presWithConvertedName)
+
+      PresPresentationDAO.updatePages(presWithConvertedName)
+      state.update(pods)
+    }
+
+    newState match {
+      case Some(ns) => ns
+      case None     => state
+    }
+
+  }
+}
+
